@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="container">
+    <div class="jumbotron text-center">
+        <h1>Welcome To MovieRec</h1>
+        <div class="lead">A place where you can find movie based on your interests</div>
+        <button class="btn btn-primary">Login</button>
+        <button class="btn btn-primary">Register</button>
+    </div>
+    <div class="text-center">
+        <h2>Movies In Theater</h2>
+    </div>
+    
+    <div class="row">
+        {% for title, posterLink in moviesInTheater.items() %}
+        <div class="col col-lg-2">
+            <img src={{posterLink}} >
+            <strong>{{ title }}</strong>            
+        </div>
+        {% endfor %}
+    </div>
+    
+
+    
+</div>
+
+{% endblock %}
