@@ -2,7 +2,7 @@ from flask import Flask, render_template, flash, request, redirect, url_for, ses
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
-
+from functools import wraps 
 import bs4 as bs
 import urllib.request
 import json
@@ -63,13 +63,13 @@ def register():
 
         cur.close()
 
-        flash('You Are Now Registered And Can LogIn', 'sucess')
+        flash('You Are Now Registered And Can LogIn', 'success')
         return redirect(url_for('index'))
     return render_template('register.html', form= form)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST' and form.validate():
+    if request.method == 'POST':
         email = request.form['email']
         password_candidate = request.form['password']
 
@@ -83,25 +83,45 @@ def login():
             password = data['password']
 
             if sha256_crypt.verify(password_candidate, password):
-                app.logger.info(' PASSWORD MATCHED')
-        
+                # passed
+                session['logged_in'] = True
+                session['email'] = email
+                flash('You Are Now Loggedin', 'sucess')
+                return redirect(url_for('dashboard'))
+
+            else:
+                err = "Invalid Login Credentials"
+                return render_template('login.html', err = err)
+            cur.close();
         else:
-            app.logger.info('NO USER')
+            err = "No user Found"
+            return render_template('login.html', err = err)
 
-        cur.execute("INSERT INTO users(name, email, username, password) VALUES(%s, %s, %s, %s)", (name, email, username, password))
+    return render_template('login.html')
 
-        # commit to db
-        mysql.connection.commit()
+# check if user is logged in
 
-        # close
+def is_logged_in(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if 'logged_in' in session:
+            return f(*args, **kwargs)
+        else:
+            flash('Unauthorised, Please Loggin', 'danger')
+            return redirect(url_for('login'))
+    return wrap
 
-        cur.close()
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You are logged out', 'success')
+    return redirect(url_for('index'))
 
-        flash('You Are Now Registered And Can LogIn', 'sucess')
-        return redirect(url_for('index'))
-    return render_template('login.html', form= form)
 
-
+@app.route('/dashboard')
+@is_logged_in
+def dashboard():
+    return render_template('dashboard.html')
 if __name__ == '__main__':
     app.secret_key = "secret123"
     app.run(debug=True)
