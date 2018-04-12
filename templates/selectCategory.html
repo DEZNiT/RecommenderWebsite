@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<form>
+<fieldset class="form-group">
+    <legend>Checkboxes</legend>
+    <div class="row">
+        <div class="form-check col-lg-6">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" value="">
+                <h4>Action</h4>
+            </label>
+        </div>
+        <div class="form-check col-lg-6">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" value="">
+                <h4>Drama</h4>
+            </label>
+        </div>
+    </div>
+    <div class="row">
+        <div class="form-check col-lg-6">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" value="">
+                <h4>Sci-fy</h4>
+            </label>
+        </div>
+        <div class="form-check col-lg-6">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" value="">
+                <h4>Adventure</h4>
+            </label>
+        </div>
+    </div>
+   
+  </fieldset>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</fieldset>
+</form>
+{% endblock %}

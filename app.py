@@ -67,6 +67,11 @@ def register():
         return redirect(url_for('index'))
     return render_template('register.html', form= form)
 
+
+@app.route('/selectCategory')
+def selectCategory():
+   return render_template('selectCategory.html') 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
