@@ -2,4 +2,10 @@
 
 {% block body %}
     <h1>Dashboard Welcome {{session.email}}</h1>
+    hello
+    {% for info in alreadyRated %}
+    <ul>
+        <li>{{info}}</li>
+    </ul>
+    {% endfor %}
 {% endblock %}

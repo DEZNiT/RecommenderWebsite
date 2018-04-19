@@ -6,6 +6,7 @@ from functools import wraps
 import bs4 as bs
 import urllib.request
 import json
+from pprint import pprint
 
 ## scrapping web for latest movies in threater
 
@@ -30,6 +31,7 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # init MySql
 mysql = MySQL(app)
+
 @app.route('/')
 def index():
     return render_template('home.html', moviesInTheater = moviesInTheater)
@@ -42,6 +44,10 @@ class RegisterForm(Form):
     ])
     confirm = PasswordField('confirm Password')
 
+        # ==============================================================
+        # The route and function
+        # to register new user
+        # ==============================================================
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm(request.form)
@@ -67,10 +73,19 @@ def register():
         return redirect(url_for('index'))
     return render_template('register.html', form= form)
 
+        # ==============================================================
+        # The route and function
+        # to select category on first signup
+        # ==============================================================
 
 @app.route('/selectCategory')
 def selectCategory():
    return render_template('selectCategory.html') 
+
+        # ==============================================================
+        # The route and function
+        # to login existing users
+        # ==============================================================
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -104,7 +119,9 @@ def login():
 
     return render_template('login.html')
 
-# check if user is logged in
+        # ==============================================================
+        #  Function to check if user is logged in
+        # ==============================================================
 
 def is_logged_in(f):
     @wraps(f)
@@ -116,17 +133,33 @@ def is_logged_in(f):
             return redirect(url_for('login'))
     return wrap
 
+        # ==============================================================
+        # The route and function
+        # to logout
+        # and clear the session
+        # ==============================================================
 @app.route('/logout')
 def logout():
     session.clear()
     flash('You are logged out', 'success')
     return redirect(url_for('index'))
 
+        # ==============================================================
+        # The route and function
+        # to dashboard
+        # ==============================================================
 
 @app.route('/dashboard')
 @is_logged_in
 def dashboard():
-    return render_template('dashboard.html')
+    id = 1
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
+    # commit to db
+    alreadyRated = cur.fetchall()
+    # close
+    cur.close()
+    return render_template('dashboard.html', alreadyRated = alreadyRated )
 if __name__ == '__main__':
     app.secret_key = "secret123"
     app.run(debug=True)
