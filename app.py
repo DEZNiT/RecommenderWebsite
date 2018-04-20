@@ -45,6 +45,21 @@ class RegisterForm(Form):
     confirm = PasswordField('confirm Password')
 
         # ==============================================================
+        #  Function to check if user is logged in
+        # ==============================================================
+
+def is_logged_in(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if 'logged_in' in session:
+            return f(*args, **kwargs)
+        else:
+            flash('Unauthorised, Please Loggin', 'danger')
+            return redirect(url_for('login'))
+    return wrap
+
+
+        # ==============================================================
         # The route and function
         # to register new user
         # ==============================================================
@@ -78,9 +93,24 @@ def register():
         # to select category on first signup
         # ==============================================================
 
-@app.route('/selectCategory')
+@app.route('/selectCategory',  methods=['GET', 'POST'])
+@is_logged_in
 def selectCategory():
-   return render_template('selectCategory.html') 
+    if request.method == 'POST':
+        #print(request.form.getlist('categories'))
+        categoriesList = request.form.getlist('categories')
+        if(len(categoriesList ) != 3):
+            flash('Please select only 3 categories', 'danger')
+            return render_template('selectCategory.html')
+        else:
+            cur = mysql.connection.cursor()
+            for i in range(len(categoriesList)):
+                cur.execute("UPDATE users SET categories%s = %s WHERE email = %s", (i+1, categoriesList[i], session['email']))
+                mysql.connection.commit()
+            cur.close()
+            print(session['email'])
+            return redirect(url_for('dashboard'))
+    return render_template('selectCategory.html') 
 
         # ==============================================================
         # The route and function
@@ -119,19 +149,6 @@ def login():
 
     return render_template('login.html')
 
-        # ==============================================================
-        #  Function to check if user is logged in
-        # ==============================================================
-
-def is_logged_in(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        if 'logged_in' in session:
-            return f(*args, **kwargs)
-        else:
-            flash('Unauthorised, Please Loggin', 'danger')
-            return redirect(url_for('login'))
-    return wrap
 
         # ==============================================================
         # The route and function
@@ -157,9 +174,13 @@ def dashboard():
     result = cur.execute("SELECT movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
     # commit to db
     alreadyRated = cur.fetchall()
+    if(len(alreadyRated) < 100):
+        return redirect(url_for('selectCategory'))
+    else :
+        return render_template('dashboard.html', alreadyRated = alreadyRated )
     # close
     cur.close()
-    return render_template('dashboard.html', alreadyRated = alreadyRated )
+    
 if __name__ == '__main__':
     app.secret_key = "secret123"
     app.run(debug=True)
