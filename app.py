@@ -7,8 +7,14 @@ import bs4 as bs
 import urllib.request
 import json
 from pprint import pprint
+import pymongo
+from pymongo import MongoClient
+client = MongoClient('mongodb://localhost:27017/')
+db = client['movies']
 
-## scrapping web for latest movies in threater
+# fiveResult = db.moviesData.find_one({"title" : "Jumanji"})
+# pprint(fiveResult)
+## scrapping web for latest movies in threater "Puppet Master III Toulon's Revenge"
 
 sause = urllib.request.urlopen('http://www.imdb.com/movies-in-theaters/').read()
 
@@ -169,15 +175,33 @@ def logout():
 @app.route('/dashboard')
 @is_logged_in
 def dashboard():
-    id = 1
+    alreadyRatedDf = {}
+    id = 3
     cur = mysql.connection.cursor()
     result = cur.execute("SELECT movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
     # commit to db
-    alreadyRated = cur.fetchall()
-    if(len(alreadyRated) < 100):
+    alreadyRatedtuple = cur.fetchall()
+    alreadyRated = list(alreadyRatedtuple)
+    if(len(alreadyRated) < 1):
         return redirect(url_for('selectCategory'))
     else :
-        return render_template('dashboard.html', alreadyRated = alreadyRated )
+        alreadyRatedFinal = []      
+        for data in alreadyRated:
+            titleData = data['title']
+            rating = data['rating']
+            # alreadyRatedFinal.append(data)
+            # pprint(alreadyRatedFinal)
+            # print(title)
+            title = titleData.strip()
+            fiveResult = db.moviesData.find_one({"title" : title})
+            if(fiveResult != None):
+                data['link'] = fiveResult['poster_path']
+                alreadyRatedFinal.append(data)
+            # pprint(fiveResult['genre_ids'])
+            # data['link'] = fiveResult['poster_path'] 
+        # alreadyRated.append({})
+        # pprint(alreadyRated)
+        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal )
     # close
     cur.close()
     

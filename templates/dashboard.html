@@ -2,10 +2,18 @@
 
 {% block body %}
     <h1>Dashboard Welcome {{session.email}}</h1>
-    hello
-    {% for info in alreadyRated %}
-    <ul>
-        <li>{{info}}</li>
-    </ul>
-    {% endfor %}
+    <div class="row rated">
+        
+        {% for info in alreadyRated %}
+        <div class="col col-lg-2 mb-5">
+            <div class="rated">
+                <img src= "http://image.tmdb.org/t/p/w342/{{info.link}}" width="140" height="209">
+                <br>
+                <h6>{{ info.title }}</h6>
+            </div>
+                        
+        </div>
+        {% endfor %}
+    </div>
+    
 {% endblock %}
