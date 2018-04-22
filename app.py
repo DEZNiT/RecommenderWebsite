@@ -177,11 +177,38 @@ def logout():
 def dashboard():
     alreadyRatedDf = {}
     id = 3
+
+        # ===========================================================
+        #         Mysql query to fetch all the rated movies by user
+        # ===========================================================
     cur = mysql.connection.cursor()
     result = cur.execute("SELECT movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
     # commit to db
     alreadyRatedtuple = cur.fetchall()
+    cur.close()
+         # ===========================================================
+        #         Mysql query to fetch count of movies
+        # ===========================================================
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT COUNT(MovieID) as totalMovieData FROM movies")
+    # commit to db
+    totalMovie = cur.fetchall()
+    cur.close()
+    totalMovie = totalMovie[0]['totalMovieData']
+
+         # ===========================================================
+        #         Mysql query to fetch count of users
+        # ===========================================================
+
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT COUNT(UserID) as totalUserData FROM userData")
+    # commit to db
+    totalUsers = cur.fetchall()
+    cur.close()
+    totalUsers = totalUsers[0]['totalUserData']
+
     alreadyRated = list(alreadyRatedtuple)
+    
     if(len(alreadyRated) < 1):
         return redirect(url_for('selectCategory'))
     else :
@@ -189,21 +216,15 @@ def dashboard():
         for data in alreadyRated:
             titleData = data['title']
             rating = data['rating']
-            # alreadyRatedFinal.append(data)
-            # pprint(alreadyRatedFinal)
-            # print(title)
             title = titleData.strip()
             fiveResult = db.moviesData.find_one({"title" : title})
             if(fiveResult != None):
                 data['link'] = fiveResult['poster_path']
                 alreadyRatedFinal.append(data)
-            # pprint(fiveResult['genre_ids'])
-            # data['link'] = fiveResult['poster_path'] 
-        # alreadyRated.append({})
-        # pprint(alreadyRated)
-        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal )
+        totalRated = len(alreadyRatedFinal)
+        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated )
     # close
-    cur.close()
+    
     
 if __name__ == '__main__':
     app.secret_key = "secret123"

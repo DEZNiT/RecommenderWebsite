@@ -2,15 +2,42 @@
 
 {% block body %}
     <h1>Dashboard Welcome {{session.email}}</h1>
-    <div class="row rated">
+    <div >
+        <div class="row text-center">
+            <div class="card text-white bg-success col ml-4 mr-5  mb-5" style="max-width: 20rem;">
+                <div class="card-header">Total Number Of Movies</div>
+                <div class="card-body">
+                    <h1 class="card-title">{{totalMovie}}</h1>
+                </div>
+            </div>
+            <div class="card text-white bg-danger ml-3 mr-5 col mb-5" style="max-width: 20rem;">
+                <div class="card-header">Number of Movies Rated</div>
+                <div class="card-body">
+                    <h1 class="card-title">{{totalRated}}</h1>
+                </div>
+            </div>
+            <div class="card text-white bg-warning col ml-3 mb-5 pull-right" style="max-width: 20rem;">
+                <div class="card-header">Total Number Of Users</div>
+                <div class="card-body">
+                    <h1 class="card-title">{{totalUsers}}</h1>
+                </div>
+            </div>
+        </div>
+
+
+    <div class="row">
         
         {% for info in alreadyRated %}
         <div class="col col-lg-2 mb-5">
-            <div class="rated">
-                <img src= "http://image.tmdb.org/t/p/w342/{{info.link}}" width="140" height="209">
-                <br>
-                <h6>{{ info.title }}</h6>
-            </div>
+            <div class="card bg-primary text-white mb-3">
+                <img style="height: 200px; width: 100%; display: block;" src="http://image.tmdb.org/t/p/w342/{{info.link}}">
+                <div class="card-body">
+                    <h6 class ="text-white">{{ info.title }}</h6>
+                </div>                
+                <div class="card-footer text-muted">
+                  2 days ago
+                </div>
+              </div>
                         
         </div>
         {% endfor %}
