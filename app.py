@@ -1,6 +1,6 @@
 from flask import Flask, render_template, flash, request, redirect, url_for, session, logging
 from flask_mysqldb import MySQL
-from wtforms import Form, StringField, TextAreaField, PasswordField, validators
+from wtforms import Form, StringField, TextAreaField, PasswordField, SelectField, RadioField, IntegerField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps 
 import bs4 as bs
@@ -45,6 +45,18 @@ class RegisterForm(Form):
     name = StringField('Name', [validators.Length(min=1,max=50)])
     username = StringField('UserName', [validators.Length(min=4,max=20)])
     email = StringField('Email', [validators.Length(min=4,max=50)])
+    occupation = SelectField('Occupation', 
+    choices = [(0, 'Other'), (1, 'Educator'), (2, 'Artist'), (3, 'Clerical'), (4, 'College Student'), (5, 'Customer Service'), (6, 'Doctor'), (7, 'Manager'),(8, 'Farmer'), (9, 'Homemaker'), (10, 'K-12 Student'), (11, 'lawer'), (12, 'Programmer'), (13, 'Retired'), (14, 'Sales'), (15, 'Scientist'), (16, 'Self Employed'), (17, 'Engineer'), (18, 'Craftsman'), (19, 'Unemployed'), (20, 'Writer')], coerce = int)
+    # occupation = StringField('Occupation', [validators.Length(min=1,max=50)])
+    gender = RadioField('Gender', choices = [('M','Male'),('F','Female')])
+    age = SelectField('Age', choices = [(1, 'Under-18'), (18, ' 18-24'), (25, ' 25-34'), (35, ' 35-44'), (45, ' 45-49'), (50, ' 50-55'), (56, '56+')], coerce = int)
+    # *  1:  "Under 18"
+	# * 18:  "18-24"
+	# * 25:  "25-34"
+	# * 35:  "35-44"
+	# * 45:  "45-49"
+	# * 50:  "50-55"
+	# * 56:  "56+"
     password = PasswordField('Password', [validators.DataRequired(),
     validators.EqualTo('confirm', message='Passwords do not match')
     ])
@@ -77,6 +89,28 @@ def register():
         email =form.email.data
         username =form.username.data
         password = sha256_crypt.encrypt(str(form.password.data))
+        age = form.data['age']
+        occupation = form.data['occupation']
+        gender = form.data['gender']
+        cur = mysql.connection.cursor()
+        print(gender)
+        cur.execute("SELECT COUNT(UserID) as maxUser FROM userData")
+        totalUserNo = cur.fetchall()
+        UserID = totalUserNo[0]['maxUser']
+        print(UserID)
+        # close
+        cur.close()
+
+        cur = mysql.connection.cursor()
+
+        cur.execute("INSERT INTO userData(UserID, Gender, Age, Occupation) VALUES(%s, %s, %s, %s)", (UserID+1, gender, age, occupation))
+
+        # commit to db
+        mysql.connection.commit()
+
+        # close
+
+        cur.close()
 
         # create cursor
         cur = mysql.connection.cursor()
@@ -208,7 +242,7 @@ def dashboard():
     totalUsers = totalUsers[0]['totalUserData']
 
     alreadyRated = list(alreadyRatedtuple)
-    
+
     if(len(alreadyRated) < 1):
         return redirect(url_for('selectCategory'))
     else :
