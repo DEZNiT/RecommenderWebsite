@@ -176,6 +176,8 @@ def login():
                 # passed
                 session['logged_in'] = True
                 session['email'] = email
+                session['id'] = data['id']+6040 
+                session['name'] = data['name']
                 flash('You Are Now Loggedin', 'sucess')
                 return redirect(url_for('dashboard'))
 
@@ -210,8 +212,15 @@ def logout():
 @is_logged_in
 def dashboard():
     alreadyRatedDf = {}
-    id = 3
+    id = session['id']
+    idData = id-6040
+    cur = mysql.connection.cursor()
 
+    cur.execute("SELECT * FROM users WHERE id = %s", [idData])
+    data = cur.fetchone()
+    categoriesData = data['categories1']
+
+    cur.close()
         # ===========================================================
         #         Mysql query to fetch all the rated movies by user
         # ===========================================================
@@ -243,7 +252,7 @@ def dashboard():
 
     alreadyRated = list(alreadyRatedtuple)
 
-    if(len(alreadyRated) < 1):
+    if(len(alreadyRated) < 1 and categoriesData == None):
         return redirect(url_for('selectCategory'))
     else :
         alreadyRatedFinal = []      
