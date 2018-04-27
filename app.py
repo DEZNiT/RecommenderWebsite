@@ -218,9 +218,35 @@ def dashboard():
 
     cur.execute("SELECT * FROM users WHERE id = %s", [idData])
     data = cur.fetchone()
-    categoriesData = data['categories1']
-
+    categoriesData1 = data['categories1']
+    categoriesData2 = data['categories2']
+    categoriesData3 = data['categories3']
     cur.close()
+
+        # ===========================================================
+        #         Mysql query to fetch top rated movies belonging to category selected by user
+        # ===========================================================
+    cur = mysql.connection.cursor()
+    result = cur.execute("select movieRatings.MovieID, movies.title from movieRatings INNER JOIN movies where movieRatings.MovieID = movies.MovieID AND movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s order by movieRatings.R5 DESC limit 20; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
+    
+    # commit to db
+    selectedCategoryMoviesTuple = cur.fetchall()
+    pprint(selectedCategoryMoviesTuple)
+    selectedCategoryMoviesList = list(selectedCategoryMoviesTuple)
+    catDataFinal = []
+    for catData in selectedCategoryMoviesList:
+            catTitleData = catData['title']
+            catTitle = catTitleData.strip()
+            print(catTitle)
+            catResult = db.moviesData.find_one({"title" : catTitle})
+            
+            if(catResult != None):
+                catData['link'] = catResult['poster_path']
+                catDataFinal.append(catData)
+    # pprint(catDataFinal)
+    cur.close()
+
+
         # ===========================================================
         #         Mysql query to fetch all the rated movies by user
         # ===========================================================
@@ -239,7 +265,7 @@ def dashboard():
     cur.close()
     totalMovie = totalMovie[0]['totalMovieData']
 
-         # ===========================================================
+        # ===========================================================
         #         Mysql query to fetch count of users
         # ===========================================================
 
@@ -252,7 +278,12 @@ def dashboard():
 
     alreadyRated = list(alreadyRatedtuple)
 
-    if(len(alreadyRated) < 1 and categoriesData == None):
+        # ===========================================================
+        #        condition to check if user have rated any movie or 
+        #         selected any preferred category if not then redirect to selectCategories page
+        # ===========================================================
+
+    if(len(alreadyRated) < 1 and categoriesData1 == None):
         return redirect(url_for('selectCategory'))
     else :
         alreadyRatedFinal = []      
@@ -265,7 +296,7 @@ def dashboard():
                 data['link'] = fiveResult['poster_path']
                 alreadyRatedFinal.append(data)
         totalRated = len(alreadyRatedFinal)
-        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated )
+        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated, catDataFinal = catDataFinal )
     # close
     
     

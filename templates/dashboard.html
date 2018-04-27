@@ -24,7 +24,23 @@
             </div>
         </div>
 
-
+    <div class="row">
+    
+        {% for info in catDataFinal %}
+        <div class="col col-lg-2 mb-5">
+            <div class="card bg-primary text-white mb-3">
+                <img style="height: 200px; width: 100%; display: block;" src="http://image.tmdb.org/t/p/w342/{{info.link}}">
+                <div class="card-body">
+                    <h6 class ="text-white">{{ info.title }}</h6>
+                </div>                
+                <div class="card-footer text-muted">
+                    2 days ago
+                </div>
+                </div>
+                        
+        </div>
+        {% endfor %}
+    </div>
     <div class="row">
         
         {% for info in alreadyRated %}
