@@ -214,6 +214,16 @@ def dashboard():
     alreadyRatedDf = {}
     id = session['id']
     idData = id-6040
+        # ===========================================================
+        #         Mysql query to fetch all the rated movies by user
+        # ===========================================================
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
+    # commit to db
+    alreadyRatedtuple = cur.fetchall()
+    cur.close()
+    alreadyRated = list(alreadyRatedtuple)
+
     cur = mysql.connection.cursor()
 
     cur.execute("SELECT * FROM users WHERE id = %s", [idData])
@@ -223,38 +233,34 @@ def dashboard():
     categoriesData3 = data['categories3']
     cur.close()
 
-        # ===========================================================
-        #         Mysql query to fetch top rated movies belonging to category selected by user
-        # ===========================================================
-    cur = mysql.connection.cursor()
-    result = cur.execute("select movieRatings.MovieID, movies.title from movieRatings INNER JOIN movies where movieRatings.MovieID = movies.MovieID AND movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s order by movieRatings.R5 DESC limit 20; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
-    
-    # commit to db
-    selectedCategoryMoviesTuple = cur.fetchall()
-    pprint(selectedCategoryMoviesTuple)
-    selectedCategoryMoviesList = list(selectedCategoryMoviesTuple)
-    catDataFinal = []
-    for catData in selectedCategoryMoviesList:
-            catTitleData = catData['title']
-            catTitle = catTitleData.strip()
-            print(catTitle)
-            catResult = db.moviesData.find_one({"title" : catTitle})
-            
-            if(catResult != None):
-                catData['link'] = catResult['poster_path']
-                catDataFinal.append(catData)
-    # pprint(catDataFinal)
-    cur.close()
+    if(len(alreadyRated) < 1 and categoriesData1 == None):
+        return redirect(url_for('selectCategory'))
+    else:
+            # ===========================================================
+            #         Mysql query to fetch top rated movies belonging to category selected by user
+            # ===========================================================
+        cur = mysql.connection.cursor()
+        result = cur.execute("select movieRatings.MovieID, movies.title from movieRatings INNER JOIN movies where movieRatings.MovieID = movies.MovieID AND movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s order by movieRatings.R5 DESC limit 20; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
+        
+        # commit to db
+        selectedCategoryMoviesTuple = cur.fetchall()
+        pprint(selectedCategoryMoviesTuple)
+        selectedCategoryMoviesList = list(selectedCategoryMoviesTuple)
+        catDataFinal = []
+        for catData in selectedCategoryMoviesList:
+                catTitleData = catData['title']
+                catTitle = catTitleData.strip()
+                print(catTitle)
+                catResult = db.moviesData.find_one({"title" : catTitle})
+                
+                if(catResult != None):
+                    catData['link'] = catResult['poster_path']
+                    catDataFinal.append(catData)
+        # pprint(catDataFinal)
+        cur.close()
 
 
-        # ===========================================================
-        #         Mysql query to fetch all the rated movies by user
-        # ===========================================================
-    cur = mysql.connection.cursor()
-    result = cur.execute("SELECT movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
-    # commit to db
-    alreadyRatedtuple = cur.fetchall()
-    cur.close()
+       
          # ===========================================================
         #         Mysql query to fetch count of movies
         # ===========================================================
@@ -276,8 +282,7 @@ def dashboard():
     cur.close()
     totalUsers = totalUsers[0]['totalUserData']
 
-    alreadyRated = list(alreadyRatedtuple)
-
+    
         # ===========================================================
         #        condition to check if user have rated any movie or 
         #         selected any preferred category if not then redirect to selectCategories page
