@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="container ">
+        <h2>{{movieResult.title}}</h2>
+        <br><br>
+    <div class="row">
+        <div class="col col-lg-4">
+            <img style="height: 300px;  display: block;" src="http://image.tmdb.org/t/p/w342/{{movieResult.poster_path}}" alt="poster">
+        </div>
+        <div class="col col-lg-8">
+            <p>{{movieResult.overview}} </p>
+            <p>
+                <h5>
+                    Rating: {{avg}}
+                </h5>
+            </p>
+            <p>
+                <h5>
+                    Released:{{movieResult.release_date}}
+                </h5>
+            </p>
+            <p>
+                <h5>Rate It</h5>
+            <form action="" method="POST">
+                <p>
+                    <select class="form-control" name = "select-value">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </p>
+                    <p>
+                        <input type="submit" class="btn btn-primary"> </p>
+            </form>
+            </p>  
+        </div>
+    </div>
+    
+</div>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+/*!
+ *  Main style by @sherali - http://query.uz - @main
+ *  License - http://query.uz
+ */
+.set-display-ib {
+  display: inline-block;
+  vertical-align: middle;
+}
+.col {
+  width: 49%;
+  float: left;
+}
+.col + .col {
+  float: right;
+}
+.rating-box {
+  display: inline-block;
+  vertical-align: top;
+}
+.rating-box ul {
+  margin: 0;
+  padding: 0;
+}
+.rating-box ul li {
+  background: #A7A9AC;
+  color: #ffffff;
+  display: inline-block;
+  vertical-align: top;
+  -webkit-border-radius: 0 1px 2px #cccccc;
+  -moz-border-radius: 0 1px 2px #cccccc;
+  border-radius: 0 1px 2px #cccccc;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  margin: 0;
+  padding: 3px 5px;
+}
+.rating-box ul li.hovered {
+  background: #FCD404;
+}
+.rating-box .info {
+  color: #3c3c3c;
+  font-size: 0.8em;
+}
+.rating-box .info.max {
+  float: right;
+}

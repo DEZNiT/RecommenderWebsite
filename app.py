@@ -203,6 +203,31 @@ def logout():
     flash('You are logged out', 'success')
     return redirect(url_for('index'))
 
+
+        # ==============================================================
+        # The route and function
+        # to see a movies details
+        # ==============================================================
+
+@app.route('/movie/<title>/<id>', methods=['GET', 'POST'])
+def movie(title, id):
+    if request.method == 'POST':
+        aaa =  request.form.get('select-value')
+        print(aaa)
+    cur = mysql.connection.cursor()
+    result = cur.execute("select ROUND(SUM(Rating), 2) as sum , count(distinct UserID) as total from userRatings where MovieID = %s ", [id])
+    # commit to db
+    ratingMovieData = cur.fetchall()
+    cur.close()
+    ratingData = list(ratingMovieData)
+    sum = ratingData[0]['sum']
+    total = ratingData[0]['total']
+    avg = round((sum/total),1)
+    print(avg)
+    title = title.strip()
+    movieResult = db.moviesData.find_one({"title" : title})
+    
+    return render_template('movie.html', movieResult = movieResult, avg =avg)
         # ==============================================================
         # The route and function
         # to dashboard
@@ -227,10 +252,10 @@ def dashboard():
     cur = mysql.connection.cursor()
 
     cur.execute("SELECT * FROM users WHERE id = %s", [idData])
-    data = cur.fetchone()
-    categoriesData1 = data['categories1']
-    categoriesData2 = data['categories2']
-    categoriesData3 = data['categories3']
+    dataUser = cur.fetchone()
+    categoriesData1 = dataUser['categories1']
+    categoriesData2 = dataUser['categories2']
+    categoriesData3 = dataUser['categories3']
     cur.close()
 
     if(len(alreadyRated) < 1 and categoriesData1 == None):
@@ -240,7 +265,7 @@ def dashboard():
             #         Mysql query to fetch top rated movies belonging to category selected by user
             # ===========================================================
         cur = mysql.connection.cursor()
-        result = cur.execute("select movieRatings.MovieID, movies.title from movieRatings INNER JOIN movies where movieRatings.MovieID = movies.MovieID AND movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s order by movieRatings.R5 DESC limit 20; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
+        result = cur.execute("select movies.MovieID, movies.title from movieRatings INNER JOIN movies on movieRatings.MovieID = movies.MovieID where movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s order by (movieRatings.R1 + movieRatings.R2 + movieRatings.R3 + movieRatings.R4 + movieRatings.R5) DESC limit 20; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
         
         # commit to db
         selectedCategoryMoviesTuple = cur.fetchall()
@@ -249,12 +274,13 @@ def dashboard():
         catDataFinal = []
         for catData in selectedCategoryMoviesList:
                 catTitleData = catData['title']
+                catData['id'] = catData['MovieID']
                 catTitle = catTitleData.strip()
-                print(catTitle)
                 catResult = db.moviesData.find_one({"title" : catTitle})
                 
                 if(catResult != None):
                     catData['link'] = catResult['poster_path']
+                    catData['popularity'] = catResult['popularity']
                     catDataFinal.append(catData)
         # pprint(catDataFinal)
         cur.close()
@@ -301,7 +327,7 @@ def dashboard():
                 data['link'] = fiveResult['poster_path']
                 alreadyRatedFinal.append(data)
         totalRated = len(alreadyRatedFinal)
-        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated, catDataFinal = catDataFinal )
+        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated, catDataFinal = catDataFinal, dataUser = dataUser )
     # close
     
     
