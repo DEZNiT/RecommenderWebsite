@@ -1,0 +1,77 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="container">
+    <div class="row">
+    <div class="clo col-lg-12">
+        <form action="" method="POST">
+            <p>
+                <select class="form-control" name = "select-value">
+                    <option value="Action">Action</option>
+                    <option value="Adventure">Adventure</option>
+                    <option value="Animation">Animation</option>
+                    <option value="Children's">Children's</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Documentary">Documentary</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Fantasy">Fantasy</option>
+                    <option value="Film-Noir">Film-Noir</option>
+                    <option value="Horror">Horror</option>
+                    <option value="Musical">Musical</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="War">War</option>
+                    <option value="War">Western</option>
+
+                </select>
+            </p>
+                <p>
+                    <input type="submit" class="btn btn-primary">
+                </p>
+        </form>
+    </div>
+    </div>
+    <div class="row">
+        <div class="col col-lg-12">
+            
+            <h1>{{categorySelected}}</h1>
+        </div>
+    </div>
+    {% if categorySelected %}
+    <div class="row">
+        {% for info in searchMoviesDataFinal %}
+        <div class="col col-lg-2 mb-5">
+            <a href="movie/{{info.title}}/{{info.id}}">
+            <div class="card bg-primary text-white mb-3">
+                <img style="height: 200px; width: 100%; display: block;" src="http://image.tmdb.org/t/p/w342/{{info.link}}">
+                <div class="card-body">
+                    <h6 class ="text-white">{{ info.title }}</h6>
+                </div>                
+            </div>
+            </a>        
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col col-lg-12">
+            <h1>Top Rated Movies</h1>
+        </div>
+        {% for info in topMoviesDataFinal %}
+        <div class="col col-lg-2 mb-5">
+            <a href="movie/{{info.title}}/{{info.id}}">
+            <div class="card bg-primary text-white mb-3">
+                <img style="height: 200px; width: 100%; display: block;" src="http://image.tmdb.org/t/p/w342/{{info.link}}">
+                <div class="card-body">
+                    <h6 class ="text-white">{{ info.title }}</h6>
+                </div>                
+            </div>
+            </a>        
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

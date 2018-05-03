@@ -12,6 +12,10 @@ from pymongo import MongoClient
 client = MongoClient('mongodb://localhost:27017/')
 db = client['movies']
 
+#  ===========================================================
+    # Current time to utc
+    # =====================================================
+
 # fiveResult = db.moviesData.find_one({"title" : "Jumanji"})
 # pprint(fiveResult)
 ## scrapping web for latest movies in threater "Puppet Master III Toulon's Revenge"
@@ -25,7 +29,7 @@ for poster in img:
     title = poster.get('title')
     src = poster.get('src')
     moviesInTheater.update({title:src})
-#print(data)
+
 
 app = Flask(__name__)
 # config mySql
@@ -93,11 +97,9 @@ def register():
         occupation = form.data['occupation']
         gender = form.data['gender']
         cur = mysql.connection.cursor()
-        print(gender)
         cur.execute("SELECT COUNT(UserID) as maxUser FROM userData")
         totalUserNo = cur.fetchall()
         UserID = totalUserNo[0]['maxUser']
-        print(UserID)
         # close
         cur.close()
 
@@ -137,7 +139,7 @@ def register():
 @is_logged_in
 def selectCategory():
     if request.method == 'POST':
-        #print(request.form.getlist('categories'))
+        
         categoriesList = request.form.getlist('categories')
         if(len(categoriesList ) != 3):
             flash('Please select only 3 categories', 'danger')
@@ -148,7 +150,7 @@ def selectCategory():
                 cur.execute("UPDATE users SET categories%s = %s WHERE email = %s", (i+1, categoriesList[i], session['email']))
                 mysql.connection.commit()
             cur.close()
-            print(session['email'])
+           
             return redirect(url_for('dashboard'))
     return render_template('selectCategory.html') 
 
@@ -202,20 +204,80 @@ def logout():
     session.clear()
     flash('You are logged out', 'success')
     return redirect(url_for('index'))
+        # ================================================================
+        #     the route and function for listing already rated movies
+        # ================================================================
+
+@app.route('/alreadyRated')
+def alreadyRated():
+    alreadyRatedDf = {}
+    id = session['id']
+        # ===========================================================
+        #         Mysql query to fetch all the rated movies by user
+        # ===========================================================
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT movie.movieid, movie.title, ratings.rating FROM movies movie INNER JOIN userRatings ratings ON ( ratings.MovieId = movie.MovieId) WHERE userId = %s", [id])
+    # commit to db
+    alreadyRatedtuple = cur.fetchall()
+    cur.close()
+    alreadyRated = list(alreadyRatedtuple)
+    alreadyRatedFinal = []      
+    for data in alreadyRated:
+        titleData = data['title']
+        rating = data['rating'] 
+        id = data['movieid']
+        title = titleData.strip()
+        fiveResult = db.moviesData.find_one({"title" : title})
+        if(fiveResult != None):
+            # data['id'] = fiveResult['id']
+            data['link'] = fiveResult['poster_path']
+            alreadyRatedFinal.append(data)
+    return render_template('rated.html', alreadyRatedFinal = alreadyRatedFinal)
 
 
+@app.route('/movie/<title>/<rating>/<link>/')
+def ratedMovie(title, rating, link):
+    title = title.strip()
+    movieResult = db.moviesData.find_one({"title" : title})
+    
+    return render_template('movie.html', movieResult = movieResult, rating = rating)
         # ==============================================================
         # The route and function
         # to see a movies details
         # ==============================================================
 
-@app.route('/movie/<title>/<id>', methods=['GET', 'POST'])
-def movie(title, id):
+@app.route('/movie/<title>/<movieId>', methods=['GET', 'POST'])
+def movie(title, movieId):
+    userId = session['id']
+
     if request.method == 'POST':
-        aaa =  request.form.get('select-value')
-        print(aaa)
+        newRating =  request.form.get('select-value')
+        newRating = int(newRating)
+        movieId = int(movieId)
+
+        
+        cur = mysql.connection.cursor()
+        cur.execute("select * from userRatings where MovieId = %s and UserID = %s", (movieId, userId))
+        userMovieRating = cur.fetchall()
+        cur.close()
+
+        if (len(userMovieRating) == 0) :
+           
+            cur = mysql.connection.cursor()
+            cur.execute("insert into userRatings(UserID, Rating, MovieID) values (%s, %s, %s)",(userId, newRating, movieId))
+            mysql.connection.commit()
+            cur.close()
+        else :
+           
+            cur = mysql.connection.cursor()
+            cur.execute("UPDATE userRatings SET Rating = %s WHERE MovieID = %s AND UserID = %s", (newRating, movieId, userId))
+            mysql.connection.commit()
+           
+            cur.close()
+        return redirect(url_for('alreadyRated'))
+        
     cur = mysql.connection.cursor()
-    result = cur.execute("select ROUND(SUM(Rating), 2) as sum , count(distinct UserID) as total from userRatings where MovieID = %s ", [id])
+    cur.execute("select ROUND(SUM(Rating), 2) as sum , count(distinct UserID) as total from userRatings where MovieID = %s ", [movieId])
     # commit to db
     ratingMovieData = cur.fetchall()
     cur.close()
@@ -223,11 +285,57 @@ def movie(title, id):
     sum = ratingData[0]['sum']
     total = ratingData[0]['total']
     avg = round((sum/total),1)
-    print(avg)
+
     title = title.strip()
     movieResult = db.moviesData.find_one({"title" : title})
     
     return render_template('movie.html', movieResult = movieResult, avg =avg)
+
+
+@app.route('/explore', methods=['GET', 'POST'])
+def explore():
+    cur = mysql.connection.cursor()
+    cur.execute("select movies.MovieID, movies.title from movieRatings INNER JOIN movies on movieRatings.MovieID = movies.MovieID order by (movieRatings.R1 + movieRatings.R2 + movieRatings.R3 + movieRatings.R4 + movieRatings.R5) DESC limit 200 ")
+
+    topMoviesTuple = cur.fetchall()
+    topMoviesList = list(topMoviesTuple)
+    topMoviesDataFinal = []
+    for topMoviesData in topMoviesList:
+            topMoviesTitleData = topMoviesData['title']
+            topMoviesData['id'] = topMoviesData['MovieID']
+            topMoviesTitle = topMoviesTitleData.strip()
+            topMoviesResult = db.moviesData.find_one({"title" : topMoviesTitle})
+            
+            if(topMoviesResult != None):
+                topMoviesData['link'] = topMoviesResult['poster_path']
+                topMoviesData['popularity'] = topMoviesResult['popularity']
+                topMoviesDataFinal.append(topMoviesData)
+    # pprint(catDataFinal)
+    cur.close()
+
+    if request.method == 'POST':
+        categorySelected =  request.form.get('select-value')
+        cur = mysql.connection.cursor()
+        cur.execute("select movies.MovieID, movies.title from movieRatings INNER JOIN movies on movieRatings.MovieID = movies.MovieID where movies.Genres like %s order by (movieRatings.R1 + movieRatings.R2 + movieRatings.R3 + movieRatings.R4 + movieRatings.R5) DESC limit 200 ", ["%"+categorySelected+"%"])
+        
+        # commit to db
+        searchMoviesTuple = cur.fetchall()
+        searchMoviesList = list(searchMoviesTuple)
+        searchMoviesDataFinal = []
+        for catData in searchMoviesList:
+                catTitleData = catData['title']
+                catData['id'] = catData['MovieID']
+                catTitle = catTitleData.strip()
+                catResult = db.moviesData.find_one({"title" : catTitle})
+                
+                if(catResult != None):
+                    catData['link'] = catResult['poster_path']
+                    catData['popularity'] = catResult['popularity']
+                    searchMoviesDataFinal.append(catData)
+        # pprint(catDataFinal)
+        cur.close()
+        return render_template('explore.html', searchMoviesDataFinal = searchMoviesDataFinal, categorySelected = categorySelected)
+    return render_template('explore.html', topMoviesDataFinal = topMoviesDataFinal)
         # ==============================================================
         # The route and function
         # to dashboard
@@ -238,6 +346,7 @@ def movie(title, id):
 def dashboard():
     alreadyRatedDf = {}
     id = session['id']
+ 
     idData = id-6040
         # ===========================================================
         #         Mysql query to fetch all the rated movies by user
@@ -265,11 +374,11 @@ def dashboard():
             #         Mysql query to fetch top rated movies belonging to category selected by user
             # ===========================================================
         cur = mysql.connection.cursor()
-        result = cur.execute("select movies.MovieID, movies.title from movieRatings INNER JOIN movies on movieRatings.MovieID = movies.MovieID where movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s order by (movieRatings.R1 + movieRatings.R2 + movieRatings.R3 + movieRatings.R4 + movieRatings.R5) DESC limit 20; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
+        result = cur.execute("select movies.MovieID, movies.title from movieRatings INNER JOIN movies on movieRatings.MovieID = movies.MovieID where movies.Genres like %s OR movies.Genres like %s OR movies.Genres like %s ORDER BY RAND() DESC limit 40; ", ("%"+categoriesData1+"%", "%"+categoriesData2+"%", "%"+categoriesData3+"%"))
         
         # commit to db
         selectedCategoryMoviesTuple = cur.fetchall()
-        pprint(selectedCategoryMoviesTuple)
+
         selectedCategoryMoviesList = list(selectedCategoryMoviesTuple)
         catDataFinal = []
         for catData in selectedCategoryMoviesList:
@@ -282,12 +391,12 @@ def dashboard():
                     catData['link'] = catResult['poster_path']
                     catData['popularity'] = catResult['popularity']
                     catDataFinal.append(catData)
-        # pprint(catDataFinal)
+
         cur.close()
 
 
        
-         # ===========================================================
+        # ===========================================================
         #         Mysql query to fetch count of movies
         # ===========================================================
     cur = mysql.connection.cursor()
@@ -326,8 +435,32 @@ def dashboard():
             if(fiveResult != None):
                 data['link'] = fiveResult['poster_path']
                 alreadyRatedFinal.append(data)
+
         totalRated = len(alreadyRatedFinal)
-        return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated, catDataFinal = catDataFinal, dataUser = dataUser )
+
+
+        # =======================================================================
+        #     Get Predictions from SVD
+        # =======================================================================
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM predictions where UserID = %s order by RAND() limit 30", [id])
+    # commit to db
+    predictedMoviesTuple = cur.fetchall()
+    cur.close()
+    
+    predictedMovies = list(predictedMoviesTuple)
+
+    predictedMoviesFinal = []      
+    for data in predictedMovies:
+        titlePredictedData = data['Title']
+        title = titlePredictedData.strip()
+        predictedResult = db.moviesData.find_one({"title" : title})
+        if(predictedResult != None):
+            data['link'] = predictedResult['poster_path']
+            predictedMoviesFinal.append(data)
+
+
+    return render_template('dashboard.html', alreadyRated = alreadyRatedFinal, totalUsers = totalUsers, totalMovie=totalMovie, totalRated = totalRated, catDataFinal = catDataFinal, dataUser = dataUser, predictedMovies = predictedMoviesFinal )
     # close
     
     

@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="container">
+        <div class="row">
+        <div class="col col-lg-12">
+            <h2>Rated Movies</h2>
+        </div>
+                {% for info in alreadyRatedFinal %}
+                <div class="col col-lg-2 mb-5">
+                    <a href="movie/{{info.title}}/{{info.rating}}{{info.link}}">
+                    <div class="card bg-primary text-white mb-3">
+                        <img style="height: 200px; width: 100%; display: block;" src="http://image.tmdb.org/t/p/w342/{{info.link}}">
+                        <div class="card-body">
+                            <h6 class ="text-white">{{ info.title }}</h6>
+                        </div>                
+                      </div>
+                    </a>
+                                
+                </div>
+                {% endfor %}
+            </div>
+            
+        {% endblock %}
+</div>

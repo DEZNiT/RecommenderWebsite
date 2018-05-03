@@ -12,14 +12,23 @@
             <p>{{movieResult.overview}} </p>
             <p>
                 <h5>
-                    Rating: {{avg}}
-                </h5>
-            </p>
-            <p>
-                <h5>
                     Released:{{movieResult.release_date}}
                 </h5>
             </p>
+            {% if rating %}
+            <p>
+                <h5>
+                    Your Rating: {{rating}}
+                </h5>
+            </p>
+            
+            {% else %}
+            <p>
+                <h5>
+                    Rating: {{avg}}
+                </h5>
+            </p>
+            
             <p>
                 <h5>Rate It</h5>
             <form action="" method="POST">
@@ -35,7 +44,8 @@
                     <p>
                         <input type="submit" class="btn btn-primary"> </p>
             </form>
-            </p>  
+            </p>
+            {% endif %}
         </div>
     </div>
     
